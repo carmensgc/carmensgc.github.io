@@ -5,7 +5,6 @@ class MenuController {
     this.menuToggle = document.querySelector(".menu-toggle");
     this.fullMenu = document.querySelector(".full-menu");
     this.menuLinks = document.querySelectorAll(".menu-links a");
-    this.lastScrollTop = 0;
     this.isMenuOpen = false;
 
     this.init();
@@ -22,6 +21,7 @@ class MenuController {
           setTimeout(() => {
             const targetElement = document.querySelector(targetId);
             if (targetElement) {
+              // Use standard smooth scrolling
               targetElement.scrollIntoView({ behavior: "smooth" });
             }
           }, 500);
@@ -118,11 +118,11 @@ class GradientController {
       const scale = 1 + Math.abs(this.velocity.x + this.velocity.y) * 0.5;
 
       const transform = `
-          rotate(${this.baseRotation}deg)
-          scale(${scale})
-          rotateX(${rotateX}deg)
-          rotateY(${rotateY}deg)
-        `;
+            rotate(${this.baseRotation}deg)
+            scale(${scale})
+            rotateX(${rotateX}deg)
+            rotateY(${rotateY}deg)
+          `;
 
       this.gradientShape.style.transform = transform;
     }
@@ -193,14 +193,14 @@ class WorkController {
     const card = document.createElement("article");
     card.className = "work-card";
     card.innerHTML = `
-        <div class="work-info">
-          <h3>${project.title}</h3>
-          <p>${project.description}</p>
-        </div>
-        <div class="work-image">
-          <img src="${project.image}" alt="${project.title}" loading="lazy" />
-        </div>
-      `;
+          <div class="work-info">
+            <h3>${project.title}</h3>
+            <p>${project.description}</p>
+          </div>
+          <div class="work-image">
+            <img src="${project.image}" alt="${project.title}" loading="lazy" />
+          </div>
+        `;
     return card;
   }
 
@@ -324,8 +324,8 @@ class AnimationController {
 
 // Initialize when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
-  const menuController = new MenuController();
-  const gradientController = new GradientController();
-  const workController = new WorkController();
-  const animationController = new AnimationController();
+  new MenuController();
+  new GradientController();
+  new WorkController();
+  new AnimationController();
 });
