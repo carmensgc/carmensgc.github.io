@@ -673,6 +673,10 @@ section {
   }
 }
 
+.hero-description {
+  font-size: 2rem;
+}
+
 @media (max-width: 768px) {
   .text-block {
     font-size: 3.5rem;
