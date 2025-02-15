@@ -4,7 +4,6 @@
   --accent-color: #0066ff;
   --text-primary: #000000;
   --text-secondary: #666666;
-
   /* Updated gradient colors */
   --gradient-1: #2b59ff;
   --gradient-2: #ff4b81;
@@ -43,7 +42,7 @@ section {
   left: 0;
   width: 100%;
   z-index: 1000;
-  padding: 2rem;
+  padding: calc(2rem + env(safe-area-inset-top)) 2rem 2rem;
   mix-blend-mode: difference;
   background: transparent;
   transition: opacity 0.3s ease;
@@ -55,14 +54,35 @@ section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transform: translateY(-10px); /* Moved slightly up */
+  transform: translateY(-10px);
 }
 
 .logo {
   font-size: 4rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: white;
+  background: linear-gradient(
+    45deg,
+    var(--gradient-1),
+    var(--gradient-2),
+    var(--gradient-3)
+  );
+  background-size: 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: logoGradient 5s ease infinite;
+}
+
+@keyframes logoGradient {
+  0% {
+    background-position: 0%;
+  }
+  50% {
+    background-position: 100%;
+  }
+  100% {
+    background-position: 0%;
+  }
 }
 
 .menu-toggle {
@@ -165,14 +185,6 @@ section {
   overflow: hidden;
 }
 
-.hero-description {
-  font-size: 1.75rem;
-  line-height: 1.5;
-  max-width: 800px;
-  margin-top: 2rem;
-  color: var(--text-secondary);
-}
-
 .gradient-shape {
   position: absolute;
   width: 150%;
@@ -184,9 +196,10 @@ section {
     var(--gradient-3) 100%
   );
   filter: blur(60px);
-  opacity: 0.5;
+  opacity: 0.8;
   animation: morphGradient 20s ease-in-out infinite;
   transform-origin: center;
+  will-change: transform;
 }
 
 .hero-content {
@@ -233,7 +246,7 @@ section {
 
 .work-header {
   padding: 0 2rem;
-  margin-top: 2rem; /* Added to move the header down */
+  margin-top: 2rem;
   margin-bottom: 2rem;
   opacity: 0;
   transform: translateY(20px);
@@ -251,6 +264,8 @@ section {
   overflow: hidden;
   position: relative;
   cursor: grab;
+  /* Allow smooth horizontal swiping on touch devices */
+  touch-action: pan-x;
 }
 
 .work-scroll:active {
@@ -268,15 +283,50 @@ section {
   padding: 2rem;
 }
 
+/* -------------------------- */
+/* Updated Work Card Styles   */
+/* -------------------------- */
 .work-card {
   flex: 0 0 auto;
   width: 400px;
   background: rgba(255, 255, 255, 0.05);
+  /* Remove any preset border */
+  border: none;
   border-radius: 8px;
   padding: 1.5rem;
   opacity: 0;
   transform: translateY(40px);
   transition: all 0.6s ease;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* Gradient border using a pseudo-element */
+.work-card::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: inherit;
+  background: linear-gradient(
+    45deg,
+    var(--gradient-1),
+    var(--gradient-2),
+    var(--gradient-3)
+  );
+  background-size: 300% 300%;
+  z-index: -1;
+  animation: gradientShift 20s ease infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.work-card:hover::before,
+.project-overlay .work-card::before {
+  opacity: 1;
 }
 
 .work-card.animate {
@@ -520,6 +570,18 @@ section {
   }
 }
 
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 @keyframes slideUp {
   0% {
     transform: translateY(100%);
@@ -542,16 +604,70 @@ section {
   }
 }
 
+/* ---------------------------- */
+/* PROJECT OVERLAY STYLES       */
+/* ---------------------------- */
+.project-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: none; /* Hidden by default */
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  z-index: 1100;
+  overflow-y: auto;
+}
+
+.project-overlay.active {
+  display: flex;
+}
+
+/* When a card is expanded (reparented into the overlay) */
+.project-overlay .work-card {
+  background: rgba(20, 20, 20, 0.95); /* Dark, opaque fill for expanded card */
+  color: #fff;
+}
+
+/* Ensure text remains white inside the expanded card */
+.project-overlay .work-card .work-info h3,
+.project-overlay .work-card .work-info p {
+  color: #fff;
+}
+
+/* Close button for expanded card */
+.close-panel {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  font-size: 2rem;
+  color: white;
+  cursor: pointer;
+  z-index: 1201;
+}
+
+/* Extra project details appended to the card */
+.project-extra {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: white;
+  margin-top: 1rem;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .text-block {
     font-size: 4.5rem;
   }
-
   .menu-links a {
     font-size: 2.5rem;
   }
-
   .work-card {
     width: 350px;
   }
@@ -561,29 +677,23 @@ section {
   .text-block {
     font-size: 3.5rem;
   }
-
   .hero-description {
     font-size: 1.1rem;
   }
-
   .menu-links a {
     font-size: 2rem;
   }
-
   .footer-content {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-
   .work-card {
     width: 300px;
   }
-
   .about-details {
     grid-template-columns: 1fr;
   }
-
   .contact-info {
     grid-template-columns: 1fr;
   }
@@ -593,33 +703,33 @@ section {
   .text-block {
     font-size: 2.5rem;
   }
-
+  .logo {
+    font-size: 2.5rem;
+  }
   .menu-links a {
     font-size: 1.5rem;
   }
-
   .social-links {
     gap: 1rem;
   }
-
   .social-links a {
     font-size: 0.8rem;
   }
-
   .work-card {
     width: 250px;
   }
-
   .nav-container {
     padding: 1rem;
   }
-
   .menu-toggle {
     width: 40px;
     height: 40px;
   }
-
   .menu-line {
     width: 20px;
+  }
+  /* Reduce work image height on very small screens */
+  .work-image {
+    height: 150px;
   }
 }

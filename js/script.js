@@ -1,4 +1,6 @@
-// Menu Controller
+// -------------------------
+// Menu Controller (unchanged)
+// -------------------------
 class MenuController {
   constructor() {
     this.nav = document.querySelector(".main-nav");
@@ -21,7 +23,6 @@ class MenuController {
           setTimeout(() => {
             const targetElement = document.querySelector(targetId);
             if (targetElement) {
-              // Use standard smooth scrolling
               targetElement.scrollIntoView({ behavior: "smooth" });
             }
           }, 500);
@@ -61,7 +62,9 @@ class MenuController {
   }
 }
 
-// Gradient Animation Controller
+// -------------------------
+// Gradient Animation Controller (unchanged)
+// -------------------------
 class GradientController {
   constructor() {
     this.gradientShape = document.querySelector(".gradient-shape");
@@ -118,80 +121,88 @@ class GradientController {
       const scale = 1 + Math.abs(this.velocity.x + this.velocity.y) * 0.5;
 
       const transform = `
-            rotate(${this.baseRotation}deg)
-            scale(${scale})
-            rotateX(${rotateX}deg)
-            rotateY(${rotateY}deg)
-          `;
+              rotate(${this.baseRotation}deg)
+              scale(${scale})
+              rotateX(${rotateX}deg)
+              rotateY(${rotateY}deg)
+            `;
 
       this.gradientShape.style.transform = transform;
     }
-
     requestAnimationFrame(() => this.animate());
   }
 }
 
-// Work Section Controller with Improved Scrolling
+// -------------------------
+// Work Section Controller (Interactive Panels)
+// Revised to animate the same card element for opening/closing
+// -------------------------
 class WorkController {
   constructor() {
     this.container = document.querySelector(".work-scroll");
     this.track = document.querySelector(".work-track");
-    this.isResetting = false;
+    this.autoScrollActive = true;
     this.scrollSpeed = 1;
+    this.isResetting = false;
     this.projects = [
       {
         title: "AI Analytics Platform",
         description: "Data Processing & Visualization",
-        image: "/api/placeholder/400/250",
+        image: "https://via.placeholder.com/400x250",
       },
       {
         title: "Smart Factory System",
         description: "Industrial IoT Solution",
-        image: "/api/placeholder/400/250",
+        image: "https://via.placeholder.com/400x250",
       },
       {
         title: "Predictive Maintenance",
         description: "Machine Learning Implementation",
-        image: "/api/placeholder/400/250",
+        image: "https://via.placeholder.com/400x250",
       },
       {
         title: "Supply Chain Optimization",
         description: "AI-Powered Logistics",
-        image: "/api/placeholder/400/250",
+        image: "https://via.placeholder.com/400x250",
       },
       {
         title: "Customer Experience Platform",
         description: "NLP & Sentiment Analysis",
-        image: "/api/placeholder/400/250",
+        image: "https://via.placeholder.com/400x250",
       },
     ];
+
+    // For panel expansion
+    this.currentCard = null;
+    this.originalParent = null;
+    this.originalNextSibling = null;
+    this.originalRect = null;
 
     this.init();
   }
 
   init() {
     if (this.container && this.track) {
-      this.createProjects();
+      // Create project cards (first instance)
+      this.projects.forEach((project, index) => {
+        const card = this.createProjectCard(project, index);
+        this.track.appendChild(card);
+      });
+      // Clone projects for infinite scroll
+      this.projects.forEach((project, index) => {
+        const card = this.createProjectCard(project, index);
+        this.track.appendChild(card);
+      });
       this.setupScroll();
-      this.startAutoScroll();
+      this.setupProjectOverlay();
+      this.animateAutoScroll();
     }
   }
 
-  createProjects() {
-    // Create initial projects
-    this.projects.forEach((project) => {
-      this.track.appendChild(this.createProjectCard(project));
-    });
-
-    // Clone projects for infinite scroll
-    this.projects.forEach((project) => {
-      this.track.appendChild(this.createProjectCard(project));
-    });
-  }
-
-  createProjectCard(project) {
+  createProjectCard(project, index) {
     const card = document.createElement("article");
     card.className = "work-card";
+    card.setAttribute("data-index", index);
     card.innerHTML = `
           <div class="work-info">
             <h3>${project.title}</h3>
@@ -227,7 +238,6 @@ class WorkController {
       const walk = (x - startPos) * 2;
       this.container.scrollLeft = scrollLeft - walk;
 
-      // Calculate scroll velocity
       scrollVelocity = this.container.scrollLeft - lastScrollLeft;
       lastScrollLeft = this.container.scrollLeft;
     };
@@ -235,62 +245,224 @@ class WorkController {
     const handleDragEnd = () => {
       isDragging = false;
       this.container.style.cursor = "grab";
-
-      // Adjust auto-scroll speed based on user interaction
       this.scrollSpeed = Math.min(Math.abs(scrollVelocity * 0.1), 2);
       if (this.scrollSpeed < 0.5) this.scrollSpeed = 1;
-
-      this.startAutoScroll();
+      this.resumeAutoScroll();
     };
 
-    // Mouse events
     this.container.addEventListener("mousedown", handleDragStart);
     this.container.addEventListener("mousemove", handleDragMove);
     this.container.addEventListener("mouseup", handleDragEnd);
     this.container.addEventListener("mouseleave", handleDragEnd);
 
-    // Touch events
     this.container.addEventListener("touchstart", handleDragStart);
     this.container.addEventListener("touchmove", handleDragMove);
     this.container.addEventListener("touchend", handleDragEnd);
 
-    // Improved scroll handling
+    // Seamless reset when scrolling beyond half the track width
     this.container.addEventListener("scroll", () => {
       if (this.isResetting) return;
-
       const scrollWidth = this.track.scrollWidth / 2;
       if (this.container.scrollLeft >= scrollWidth) {
         this.isResetting = true;
-        requestAnimationFrame(() => {
-          this.container.scrollLeft = 1;
-          this.isResetting = false;
-        });
+        this.container.scrollLeft = 0;
+        this.isResetting = false;
       }
     });
   }
 
-  startAutoScroll() {
-    this.autoScrollInterval = setInterval(() => {
-      if (!this.container.matches(":hover") && !this.isResetting) {
-        this.container.scrollLeft += this.scrollSpeed;
-
-        if (this.container.scrollLeft >= this.track.scrollWidth / 2) {
-          this.isResetting = true;
-          requestAnimationFrame(() => {
-            this.container.scrollLeft = 1;
-            this.isResetting = false;
-          });
-        }
+  animateAutoScroll() {
+    const autoScroll = () => {
+      if (
+        !this.autoScrollActive ||
+        this.currentCard ||
+        this.container.matches(":hover")
+      ) {
+        requestAnimationFrame(autoScroll);
+        return;
       }
-    }, 20);
+      this.container.scrollLeft += this.scrollSpeed;
+      if (this.container.scrollLeft >= this.track.scrollWidth / 2) {
+        this.container.scrollLeft = 0;
+      }
+      requestAnimationFrame(autoScroll);
+    };
+    autoScroll();
   }
 
   pauseAutoScroll() {
-    clearInterval(this.autoScrollInterval);
+    this.autoScrollActive = false;
+  }
+
+  resumeAutoScroll() {
+    this.autoScrollActive = true;
+  }
+
+  setupProjectOverlay() {
+    // Attach click events on each card so that clicking it expands the panel
+    const cards = this.track.querySelectorAll(".work-card");
+    cards.forEach((card) => {
+      card.addEventListener("click", () => {
+        if (this.currentCard) return; // already expanded
+        const index = card.getAttribute("data-index");
+        const project = this.projects[index];
+        this.openProjectPanel(card, project);
+      });
+    });
+  }
+
+  openProjectPanel(card, project) {
+    // Pause auto-scroll and disable background scrolling
+    this.pauseAutoScroll();
+    document.body.style.overflow = "hidden";
+
+    // Save reference and original parent info
+    this.currentCard = card;
+    this.originalParent = card.parentNode;
+    this.originalNextSibling = card.nextSibling;
+    this.originalRect = card.getBoundingClientRect();
+
+    // Move the card into the overlay container
+    const overlay = document.getElementById("projectOverlay");
+    overlay.innerHTML = ""; // clear any previous content
+    overlay.appendChild(card);
+    overlay.classList.add("active");
+
+    // Set the card’s style so that it sits exactly where it was
+    card.style.position = "fixed";
+    card.style.top = this.originalRect.top + "px";
+    card.style.left = this.originalRect.left + "px";
+    card.style.width = this.originalRect.width + "px";
+    card.style.height = this.originalRect.height + "px";
+    card.style.margin = "0";
+    card.style.zIndex = "1200";
+    card.style.transition = "all 0.7s cubic-bezier(0.77, 0, 0.175, 1)";
+
+    // (Optionally) append extra details into the card if not already there
+    let extra = card.querySelector(".project-extra");
+    if (!extra) {
+      extra = document.createElement("div");
+      extra.className = "project-extra";
+      extra.innerHTML = `${project.description} – Detailed information about ${project.title}. Lorem ipsum dolor sit amet, consectetur adipiscing elit.`;
+      extra.style.opacity = "0";
+      extra.style.transition = "opacity 0.5s ease";
+      card.appendChild(extra);
+    }
+
+    // Create a close button if one isn’t already in place
+    let closeBtn = card.querySelector(".close-panel");
+    if (!closeBtn) {
+      closeBtn = document.createElement("button");
+      closeBtn.className = "close-panel";
+      closeBtn.innerHTML = "&times;";
+      closeBtn.style.position = "absolute";
+      closeBtn.style.top = "1rem";
+      closeBtn.style.right = "1rem";
+      closeBtn.style.background = "transparent";
+      closeBtn.style.border = "none";
+      closeBtn.style.fontSize = "2rem";
+      closeBtn.style.color = "white";
+      closeBtn.style.cursor = "pointer";
+      card.appendChild(closeBtn);
+      closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.closeProjectPanel();
+      });
+    }
+
+    // Force reflow so the browser registers the starting position
+    card.getBoundingClientRect();
+
+    // Calculate target (expanded) dimensions: 75vw x 75vh, centered
+    const finalWidth = window.innerWidth * 0.75;
+    const finalHeight = window.innerHeight * 0.75;
+    const finalLeft = (window.innerWidth - finalWidth) / 2;
+    const finalTop = (window.innerHeight - finalHeight) / 2;
+
+    // Animate to the expanded state
+    requestAnimationFrame(() => {
+      card.style.top = finalTop + "px";
+      card.style.left = finalLeft + "px";
+      card.style.width = finalWidth + "px";
+      card.style.height = finalHeight + "px";
+      card.style.borderRadius = "10px";
+    });
+
+    // Fade in extra details after the main expansion
+    card.addEventListener(
+      "transitionend",
+      function handleTransition(e) {
+        if (e.propertyName === "top") {
+          extra.style.opacity = "1";
+          card.removeEventListener("transitionend", handleTransition);
+        }
+      },
+      { once: true }
+    );
+  }
+
+  closeProjectPanel() {
+    if (!this.currentCard) return;
+    const card = this.currentCard;
+    const overlay = document.getElementById("projectOverlay");
+    const extra = card.querySelector(".project-extra");
+
+    // Fade out the extra details
+    if (extra) {
+      extra.style.opacity = "0";
+    }
+    // Animate back to the saved original dimensions and position
+    card.style.top = this.originalRect.top + "px";
+    card.style.left = this.originalRect.left + "px";
+    card.style.width = this.originalRect.width + "px";
+    card.style.height = this.originalRect.height + "px";
+    card.style.borderRadius = "8px";
+
+    // When the transition is complete, restore the card into the track
+    card.addEventListener(
+      "transitionend",
+      () => {
+        // Clear inline styles added during expansion
+        card.style.position = "";
+        card.style.top = "";
+        card.style.left = "";
+        card.style.width = "";
+        card.style.height = "";
+        card.style.margin = "";
+        card.style.zIndex = "";
+        card.style.transition = "";
+        card.style.borderRadius = "";
+
+        // Remove the close button and extra details if desired
+        const closeBtn = card.querySelector(".close-panel");
+        if (closeBtn) closeBtn.remove();
+        if (extra) extra.remove();
+
+        // Place the card back into its original location in the track
+        if (this.originalNextSibling) {
+          this.originalParent.insertBefore(card, this.originalNextSibling);
+        } else {
+          this.originalParent.appendChild(card);
+        }
+
+        // Hide the overlay and reset stored variables
+        overlay.classList.remove("active");
+        overlay.innerHTML = "";
+        this.currentCard = null;
+        this.originalParent = null;
+        this.originalNextSibling = null;
+        this.originalRect = null;
+        document.body.style.overflow = "";
+        this.resumeAutoScroll();
+      },
+      { once: true }
+    );
   }
 }
 
-// Intersection Observer for Animations
+// -------------------------
+// Intersection Observer for Animations (unchanged)
+// -------------------------
 class AnimationController {
   constructor() {
     this.init();
@@ -322,7 +494,9 @@ class AnimationController {
   }
 }
 
-// Initialize when DOM is loaded
+// -------------------------
+// Initialize All Controllers on DOMContentLoaded
+// -------------------------
 document.addEventListener("DOMContentLoaded", () => {
   new MenuController();
   new GradientController();
